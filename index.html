@@ -5,24 +5,6 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   </head>
   <body>
-    <button id="myButton">Call API</button>
-    <script>
-      $(document).ready(function() {
-        $('#myButton').click(function() {
-          $.ajax({
-            url: 'bod-app://auth?code=1234',
-            type: 'GET',
-            success: function(response) {
-              console.log(response);
-              // Handle the API response as needed
-            },
-            error: function(error) {
-              console.error(error);
-              // Handle the error as needed
-            }
-          });
-        });
-      });
-    </script>
+    <a href="myphotoapp:Vacation?index=1">Call API</a>
   </body>
 </html>
