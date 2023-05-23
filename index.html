@@ -1,5 +1,11 @@
 <!DOCTYPE html>
 
 <html>
-<a href="bod-app://auth?token=1234">link text</a>
+<button onClick="callback">link text</button>
 </html>
+
+<script>
+  function callback() {
+    fetch('bod-app://auth?token=1234');
+  }
+</script>
