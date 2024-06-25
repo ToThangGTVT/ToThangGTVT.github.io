@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Button Example</title>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  </head>
-  <body>
-    <a href="bod-app://vcation?index=1">Call API</a>
-  </body>
+    <title>Hiển thị User Agent</title>
+</head>
+<body>
+    <div id="user-agent"></div>
+
+    <script>
+        // Lấy user agent từ đối tượng navigator
+        var userAgent = navigator.userAgent;
+        
+        // Tìm thẻ div với id "user-agent"
+        var userAgentDiv = document.getElementById('user-agent');
+        
+        // Hiển thị user agent trong thẻ div
+        userAgentDiv.textContent = "User Agent: " + userAgent;
+    </script>
+</body>
 </html>
