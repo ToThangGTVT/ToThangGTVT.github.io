@@ -1,292 +1,468 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- This adapter normalizes cross-browser differences in WebRTC APIs. Currently necessary in order to support Firefox. -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.1.2/adapter.min.js"
-      integrity="sha512-l40eBFtXx+ve5RryIELC3y6/OM6Nu89mLGQd7fg1C93tN6XrkC3supb+/YiD/Y+B8P37kdJjtG1MT1kOO2VzxA=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-  </head>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ra quyết định với xác suất</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f4f0;
+    --color-background-info: #e6f1fb;
+    --color-text-primary: #2c2c2a;
+    --color-text-secondary: #5f5e5a;
+    --color-text-tertiary: #888780;
+    --color-text-info: #185fa5;
+    --color-text-success: #0f6e56;
+    --color-text-danger: #a32d2d;
+    --color-text-warning: #854f0b;
+    --color-border-tertiary: rgba(44,44,42,0.15);
+    --color-border-secondary: rgba(44,44,42,0.3);
+    --color-border-info: #b5d4f4;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #1e1e1c;
+      --color-background-secondary: #2c2c2a;
+      --color-background-info: #042c53;
+      --color-text-primary: #e8e6de;
+      --color-text-secondary: #b4b2a9;
+      --color-text-tertiary: #888780;
+      --color-text-info: #85b7eb;
+      --color-text-success: #5dcaa5;
+      --color-text-danger: #f09595;
+      --color-text-warning: #ef9f27;
+      --color-border-tertiary: rgba(232,230,222,0.15);
+      --color-border-secondary: rgba(232,230,222,0.3);
+      --color-border-info: #0c447c;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    padding: 2rem 1.5rem;
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--color-text-primary);
+  }
+  .subtitle {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: 1.5rem;
+  }
+  .tab-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 0.5px solid var(--color-border-secondary);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background 0.15s, color 0.15s;
+  }
+  .tab-btn.active {
+    background: var(--color-background-info);
+    color: var(--color-text-info);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel > p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+  .card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 1rem;
+  }
+  .note {
+    padding: 1rem;
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    border-left: 3px solid;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 1rem; }
+  label { font-size: 12px; color: var(--color-text-secondary); display: block; margin-bottom: 4px; }
+  input[type=range] { width: 100%; accent-color: var(--color-text-info); }
+  .val { font-size: 13px; font-weight: 500; margin-top: 4px; color: var(--color-text-primary); }
+  .metric-card {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+    text-align: center;
+  }
+  .metric-big { font-size: 22px; font-weight: 500; color: var(--color-text-info); }
+  .metric-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+  .result-box {
+    display: flex; flex-direction: column; justify-content: center;
+    align-items: center;
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+  }
+  .result-big { font-size: 28px; font-weight: 500; margin-top: 4px; }
+  .result-label { font-size: 12px; color: var(--color-text-secondary); }
+  .bar-track {
+    height: 12px; border-radius: 6px;
+    background: var(--color-background-secondary);
+    overflow: hidden; margin-top: 4px;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 6px;
+    transition: width 0.3s, background 0.3s;
+  }
+  .bar-labels {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px;
+  }
+  .bias-item {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 1rem; cursor: pointer; margin-bottom: 10px;
+  }
+  .bias-header { display: flex; justify-content: space-between; align-items: center; }
+  .bias-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+  .bias-icon { font-size: 11px; color: var(--color-text-tertiary); }
+  .bias-body {
+    display: none; margin-top: 8px;
+    font-size: 13px; color: var(--color-text-secondary); line-height: 1.7;
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .col-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg); padding: 1rem;
+  }
+  .col-card.highlight {
+    border-color: var(--color-border-info);
+    background: var(--color-background-info);
+  }
+  .col-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
+  .col-title.info { color: var(--color-text-info); }
+  .col-body { font-size: 13px; color: var(--color-text-secondary); line-height: 1.8; }
+  .kelly-bars {
+    display: flex; align-items: flex-end; gap: 8px;
+    height: 100px; padding: 0 8px; margin-bottom: 8px;
+  }
+  .kelly-bar {
+    flex: 1; border-radius: 3px 3px 0 0;
+    transition: height 0.3s;
+  }
+  .kelly-result-box {
+    margin-top: 1rem; padding: 1rem;
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md); text-align: center;
+  }
+  .bayes-posterior {
+    display: flex; align-items: center; gap: 16px;
+    padding: 1rem; background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+  }
+  .bayes-num { font-size: 28px; font-weight: 500; color: var(--color-text-info); margin-top: 2px; }
+  .bayes-track {
+    height: 10px; border-radius: 5px;
+    background: var(--color-background-primary);
+    overflow: hidden; border: 0.5px solid var(--color-border-tertiary);
+  }
+  .bayes-fill { height: 100%; background: var(--color-background-info); transition: width 0.3s; }
+  @media (max-width: 480px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
 
-  <body>
-    <div class="grid">
-      <h1>Calls Echo Demo</h1>
+<h1>Ra quyết định với xác suất</h1>
+<p class="subtitle">4 công cụ tư duy xác suất thực tiễn — kéo thanh trượt để tương tác trực tiếp</p>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showT('ev')">Kỳ vọng toán học</button>
+  <button class="tab-btn" onclick="showT('bayes')">Tư duy Bayes</button>
+  <button class="tab-btn" onclick="showT('kelly')">Cỡ cược Kelly</button>
+  <button class="tab-btn" onclick="showT('bias')">Bẫy nhận thức</button>
+</div>
+
+<!-- EV Panel -->
+<div id="pn-ev" class="panel active">
+  <p>Kỳ vọng toán học (Expected Value) = tổng của <em>(xác suất × kết quả)</em>. Quyết định tốt không phải là quyết định luôn ra kết quả tốt — mà là quyết định có <strong>EV dương</strong>.</p>
+  <div class="card">
+    <div class="card-title">Máy tính kỳ vọng — thử với tình huống của bạn</div>
+    <div class="grid-2">
       <div>
-        <h2>Local stream</h2>
-        <video id="local-video" autoplay muted></video>
+        <label>Xác suất thành công (%)</label>
+        <input type="range" id="prob" min="1" max="99" value="40" oninput="calcEV()">
+        <div class="val" id="prob-label">40%</div>
       </div>
       <div>
-        <h2>Remote echo stream</h2>
-        <video id="remote-video" autoplay></video>
+        <label>Nếu thành công, lợi ích</label>
+        <input type="range" id="win" min="1" max="100" value="30" oninput="calcEV()">
+        <div class="val" id="win-label">+30 đơn vị</div>
+      </div>
+      <div>
+        <label>Nếu thất bại, thiệt hại</label>
+        <input type="range" id="loss" min="1" max="100" value="10" oninput="calcEV()">
+        <div class="val" id="loss-label">−10 đơn vị</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Kỳ vọng (EV)</div>
+        <div id="ev-result" class="result-big" style="color:var(--color-text-success)">+6.0</div>
+        <div id="ev-verdict" style="font-size:12px;margin-top:4px;color:var(--color-text-success)">→ Nên làm ✓</div>
       </div>
     </div>
+    <div class="bar-track">
+      <div id="ev-bar" class="bar-fill" style="width:55%;background:#1D9E75;"></div>
+    </div>
+    <div class="bar-labels"><span>EV âm → tránh</span><span>EV dương → nên làm</span></div>
+  </div>
+  <div class="note" style="border-color:#1D9E75;">
+    <strong style="color:var(--color-text-primary);">Ứng dụng thực tế:</strong> Nộp đơn xin học bổng dù tỉ lệ chỉ 10% — nếu học bổng trị giá 500 triệu và chi phí nộp đơn chỉ mất 2 tiếng, EV = 50 triệu. Luôn nộp.
+  </div>
+</div>
 
-    <script type="module">
-      // This is a class the defines the Calls API interactions.
-      // It's not an SDK but a example of how Calls API can be used.
+<!-- Bayes Panel -->
+<div id="pn-bayes" class="panel">
+  <p>Tư duy Bayes: <strong>cập nhật niềm tin khi có bằng chứng mới</strong>, thay vì giữ nguyên ý kiến ban đầu hoặc thay đổi hoàn toàn.</p>
+  <div class="card">
+    <div class="card-title">Ví dụ: Đối tác kinh doanh có đáng tin không?</div>
+    <div style="display:grid;gap:12px;">
+      <div>
+        <label>Niềm tin ban đầu (prior) — trước khi gặp họ</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+          <input type="range" min="1" max="99" value="50" id="prior" oninput="calcBayes()" style="flex:1;">
+          <span id="prior-lbl" class="val" style="min-width:36px;">50%</span>
+        </div>
+      </div>
+      <div>
+        <label>Bằng chứng tốt xuất hiện (vd: hoàn thành đúng hạn 3 lần)</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+          <input type="range" min="1" max="99" value="80" id="likelihood" oninput="calcBayes()" style="flex:1;">
+          <span id="like-lbl" class="val" style="min-width:36px;">80%</span>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">Xác suất thấy bằng chứng này nếu họ đáng tin</div>
+      </div>
+      <div>
+        <label>Xác suất thấy bằng chứng này nếu họ KHÔNG đáng tin</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+          <input type="range" min="1" max="99" value="20" id="false-pos" oninput="calcBayes()" style="flex:1;">
+          <span id="fp-lbl" class="val" style="min-width:36px;">20%</span>
+        </div>
+      </div>
+      <div class="bayes-posterior">
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--color-text-secondary);">Niềm tin sau cập nhật (posterior)</div>
+          <div id="bayes-result" class="bayes-num">80%</div>
+        </div>
+        <div style="flex:2;">
+          <div class="bayes-track">
+            <div id="bayes-bar" class="bayes-fill" style="width:80%;"></div>
+          </div>
+          <div id="bayes-text" style="font-size:12px;color:var(--color-text-secondary);margin-top:6px;line-height:1.5;">Bằng chứng tốt làm tăng niềm tin đáng kể</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="border-color:#185FA5;">
+    <strong style="color:var(--color-text-primary);">Lỗi phổ biến:</strong> Người ta thường bỏ qua prior (xác suất nền). Nếu 99% startup thất bại, dù pitch deck của bạn cực kỳ ấn tượng, xác suất thành công vẫn thấp hơn bạn nghĩ nhiều.
+  </div>
+</div>
 
-      // This is the App Id provided by the dashboard that identifies this Calls Application.
-      const appId = '5f363e80615ba68aa71c0650046c429b';
-      // DO NOT USE YOUR SECRET IN THE BROWSER FOR PRODUCTION. It should be kept and used server-side.
-      const appSecret = '2d83025e7f4b97a31e21c46daca9d54ba4556bc00a4ee912d4732a2a9ed010e2';
+<!-- Kelly Panel -->
+<div id="pn-kelly" class="panel">
+  <p>Tiêu chí Kelly: công thức toán học để biết <strong>nên đặt cược bao nhiêu % nguồn lực</strong> vào một cơ hội — tránh cả hai cực: quá thận trọng (bỏ lỡ) và quá liều lĩnh (phá sản).</p>
+  <div class="card">
+    <div class="card-title">Bạn nên đầu tư bao nhiêu % vốn?</div>
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div>
+        <label>Xác suất thắng (%)</label>
+        <input type="range" id="kp" min="1" max="99" value="60" oninput="calcKelly()">
+        <div id="kp-lbl" class="val">60%</div>
+      </div>
+      <div>
+        <label>Tỉ lệ thắng/thua (odds)</label>
+        <input type="range" id="ko" min="10" max="500" value="200" oninput="calcKelly()">
+        <div id="ko-lbl" class="val">2.0× (thắng gấp đôi số cược)</div>
+      </div>
+    </div>
+    <div class="kelly-bars" id="kelly-bars"></div>
+    <div class="bar-labels">
+      <span>Quá ít → lãng phí cơ hội</span>
+      <span id="kelly-mark" style="color:var(--color-text-success);font-weight:500;">Kelly: 20%</span>
+      <span>Quá nhiều → rủi ro phá sản</span>
+    </div>
+    <div class="kelly-result-box">
+      <div style="font-size:12px;color:var(--color-text-secondary);">Khuyến nghị đặt cược</div>
+      <div id="kelly-result" style="font-size:32px;font-weight:500;color:var(--color-text-success);margin-top:4px;">20% vốn</div>
+      <div id="kelly-sub" style="font-size:12px;color:var(--color-text-secondary);margin-top:4px;">Tối ưu tăng trưởng dài hạn</div>
+    </div>
+  </div>
+  <div class="note" style="border-color:#BA7517;">
+    <strong style="color:var(--color-text-primary);">Thực tế:</strong> Nhiều nhà đầu tư chuyên nghiệp dùng <em>nửa Kelly</em> (chia đôi kết quả) vì ước lượng xác suất thường bị sai. Bảo vệ vốn quan trọng hơn tối đa hóa lợi nhuận ngắn hạn.
+  </div>
+</div>
 
-      class CallsApp {
-        constructor(appId, basePath = 'https://rtc.live.cloudflare.com/v1') {
-          this.prefixPath = `${basePath}/apps/${appId}`;
-        }
+<!-- Bias Panel -->
+<div id="pn-bias" class="panel">
+  <p>Não người tiến hóa để <em>sống sót</em>, không để <em>tính xác suất chính xác</em>. Đây là những bẫy nguy hiểm nhất khi ra quyết định.</p>
+  <div>
+    <div class="bias-item" onclick="toggleBias('b1')">
+      <div class="bias-header">
+        <div class="bias-title">Thiên kiến sống sót</div>
+        <div class="bias-icon" id="b1-icon">▼ xem ví dụ</div>
+      </div>
+      <div id="b1" class="bias-body">Bạn chỉ nghe về những người bỏ đại học thành tỉ phú — không nghe về 10.000 người bỏ học thất bại. Não bạn ước lượng xác suất thành công quá cao. <strong style="color:var(--color-text-primary);">Sửa:</strong> Chủ động tìm số liệu về người thất bại trước khi quyết định.</div>
+    </div>
+    <div class="bias-item" onclick="toggleBias('b2')">
+      <div class="bias-header">
+        <div class="bias-title">Ảo tưởng lập kế hoạch</div>
+        <div class="bias-icon" id="b2-icon">▼ xem ví dụ</div>
+      </div>
+      <div id="b2" class="bias-body">Mọi dự án đều bị ước lượng quá lạc quan về thời gian và chi phí. Thực tế thường gấp 2–3 lần dự kiến. <strong style="color:var(--color-text-primary);">Sửa:</strong> Dùng "reference class forecasting" — hỏi dự án tương tự trước đây mất bao lâu, dùng con số đó thay vì cảm tính.</div>
+    </div>
+    <div class="bias-item" onclick="toggleBias('b3')">
+      <div class="bias-header">
+        <div class="bias-title">Sợ mất mát (Loss aversion)</div>
+        <div class="bias-icon" id="b3-icon">▼ xem ví dụ</div>
+      </div>
+      <div id="b3" class="bias-body">Mất 1 triệu đau gấp 2× so với niềm vui khi được 1 triệu. Vì vậy người ta từ chối cược công bằng, giữ cổ phiếu thua lỗ quá lâu, không dám thay đổi công việc. <strong style="color:var(--color-text-primary);">Sửa:</strong> Tính EV lạnh lùng, đặt câu hỏi "nếu tôi chưa có thứ này, tôi có mua không?"</div>
+    </div>
+    <div class="bias-item" onclick="toggleBias('b4')">
+      <div class="bias-header">
+        <div class="bias-title">Nhầm lẫn tần suất và xác suất</div>
+        <div class="bias-icon" id="b4-icon">▼ xem ví dụ</div>
+      </div>
+      <div id="b4" class="bias-body">Sau 5 lần tung đồng xu ra mặt ngửa, não bạn nghĩ "lần này chắc phải ra sấp" — nhưng xác suất vẫn là 50/50. Không có "đến lượt" trong xác suất độc lập. <strong style="color:var(--color-text-primary);">Sửa:</strong> Hỏi "sự kiện này có độc lập với quá khứ không?" trước khi quyết định.</div>
+    </div>
+    <div class="bias-item" onclick="toggleBias('b5')">
+      <div class="bias-header">
+        <div class="bias-title">Quá tự tin (Overconfidence)</div>
+        <div class="bias-icon" id="b5-icon">▼ xem ví dụ</div>
+      </div>
+      <div id="b5" class="bias-body">90% tài xế nghĩ mình lái xe giỏi hơn trung bình. 80% doanh nhân tin startup của họ sẽ thành công dù tỉ lệ thực tế là 10–20%. <strong style="color:var(--color-text-primary);">Sửa:</strong> Đặt khoảng tin cậy rộng hơn bản năng, chủ động tìm lý do mình có thể sai.</div>
+    </div>
+  </div>
+</div>
 
-        async sendRequest(url, body, method = 'POST') {
-          const request = {
-            method: method,
-            mode: 'cors',
-            headers: {
-              'content-type': 'application/json',
-              Authorization: `Bearer ${appSecret}`
-            },
-            body: JSON.stringify(body)
-          };
-          const response = await fetch(url, request);
-          const result = await response.json();
-          return result;
-        }
+<script>
+function showT(id) {
+  ['ev','bayes','kelly','bias'].forEach(t => {
+    document.getElementById('pn-'+t).classList.toggle('active', t===id);
+    document.querySelectorAll('.tab-btn')[['ev','bayes','kelly','bias'].indexOf(t)].classList.toggle('active', t===id);
+  });
+}
 
-        checkErrors(result, tracksCount = 0) {
-          if (result.errorCode) {
-            throw new Error(result.errorDescription);
-          }
-          for (let i = 0; i < tracksCount; i++) {
-            if (result.tracks[i].errorCode) {
-              throw new Error(
-                `tracks[${i}]: ${result.tracks[i].errorDescription}`
-              );
-            }
-          }
-        }
+function calcEV() {
+  const p = +document.getElementById('prob').value / 100;
+  const w = +document.getElementById('win').value;
+  const l = +document.getElementById('loss').value;
+  const ev = p * w - (1 - p) * l;
+  document.getElementById('prob-label').textContent = Math.round(p*100) + '%';
+  document.getElementById('win-label').textContent = '+' + w + ' đơn vị';
+  document.getElementById('loss-label').textContent = '−' + l + ' đơn vị';
+  document.getElementById('ev-result').textContent = (ev >= 0 ? '+' : '') + ev.toFixed(1);
+  const pos = ev >= 0;
+  document.getElementById('ev-result').style.color = pos ? 'var(--color-text-success)' : 'var(--color-text-danger)';
+  document.getElementById('ev-verdict').textContent = pos ? '→ Nên làm ✓' : '→ Nên tránh ✗';
+  document.getElementById('ev-verdict').style.color = pos ? 'var(--color-text-success)' : 'var(--color-text-danger)';
+  const pct = Math.max(5, Math.min(95, ((ev + 100) / 200) * 100));
+  document.getElementById('ev-bar').style.width = pct + '%';
+  document.getElementById('ev-bar').style.background = pos ? '#1D9E75' : '#A32D2D';
+}
 
-        // newSession sends the initial offer and creates a session
-        async newSession(offerSDP) {
-          const url = `${this.prefixPath}/sessions/new`;
-          const body = {
-            sessionDescription: {
-              type: 'offer',
-              sdp: offerSDP
-            }
-          };
-          const result = await this.sendRequest(url, body);
-          this.checkErrors(result);
-          this.sessionId = result.sessionId;
-          return result;
-        }
+function calcBayes() {
+  const prior = +document.getElementById('prior').value / 100;
+  const lk = +document.getElementById('likelihood').value / 100;
+  const fp = +document.getElementById('false-pos').value / 100;
+  document.getElementById('prior-lbl').textContent = Math.round(prior*100) + '%';
+  document.getElementById('like-lbl').textContent = Math.round(lk*100) + '%';
+  document.getElementById('fp-lbl').textContent = Math.round(fp*100) + '%';
+  const num = lk * prior;
+  const denom = lk * prior + fp * (1 - prior);
+  const post = denom === 0 ? 0 : num / denom;
+  const pct = Math.round(post * 100);
+  document.getElementById('bayes-result').textContent = pct + '%';
+  document.getElementById('bayes-bar').style.width = pct + '%';
+  const change = pct - Math.round(prior*100);
+  document.getElementById('bayes-text').textContent = change > 0
+    ? 'Bằng chứng này làm tăng niềm tin thêm ' + change + ' điểm %'
+    : change < 0
+    ? 'Bằng chứng này làm giảm niềm tin ' + Math.abs(change) + ' điểm %'
+    : 'Bằng chứng này không thay đổi niềm tin';
+}
 
-        // newTracks shares local tracks or gets tracks
-        async newTracks(trackObjects, offerSDP = null) {
-          const url = `${this.prefixPath}/sessions/${this.sessionId}/tracks/new`;
-          const body = {
-            sessionDescription: {
-              type: 'offer',
-              sdp: offerSDP
-            },
-            tracks: trackObjects
-          };
-          if (!offerSDP) {
-            delete body['sessionDescription'];
-          }
-          const result = await this.sendRequest(url, body);
-          this.checkErrors(result, trackObjects.length);
-          return result;
-        }
+function calcKelly() {
+  const p = +document.getElementById('kp').value / 100;
+  const b = +document.getElementById('ko').value / 100;
+  document.getElementById('kp-lbl').textContent = Math.round(p*100) + '%';
+  document.getElementById('ko-lbl').textContent = b.toFixed(1) + '× (thắng gấp ' + b.toFixed(1) + ' lần số cược)';
+  const kelly = Math.max(0, (b * p - (1-p)) / b);
+  const pct = Math.round(kelly * 100);
+  document.getElementById('kelly-result').textContent = pct + '% vốn';
+  document.getElementById('kelly-mark').textContent = 'Kelly: ' + pct + '%';
+  const col = pct <= 0 ? 'var(--color-text-danger)' : pct < 10 ? 'var(--color-text-warning)' : 'var(--color-text-success)';
+  document.getElementById('kelly-result').style.color = col;
+  document.getElementById('kelly-sub').textContent = pct <= 0 ? 'EV âm — không nên đầu tư' : pct < 10 ? 'Cơ hội nhỏ — đặt cược nhỏ' : 'Tối ưu tăng trưởng dài hạn';
+  const wrap = document.getElementById('kelly-bars');
+  wrap.innerHTML = '';
+  const steps = [5,10,15,20,25,30,40,50,60,75,100];
+  const logMax = kelly > 0 ? p * Math.log(1 + b*kelly) + (1-p) * Math.log(Math.max(0.001, 1 - kelly)) : 0.01;
+  steps.forEach(s => {
+    const sv = s / 100;
+    const lg = p * Math.log(1 + b*sv) + (1-p) * Math.log(Math.max(0.001, 1 - sv));
+    const h = Math.max(4, Math.min(90, ((lg + 0.5) / (logMax + 0.5)) * 90));
+    const isK = Math.abs(sv - kelly) < 0.08;
+    const bar = document.createElement('div');
+    bar.className = 'kelly-bar';
+    bar.style.height = h + 'px';
+    bar.style.background = isK ? '#1D9E75' : sv > kelly ? '#A32D2D' : '#185FA5';
+    bar.style.opacity = isK ? '1' : '0.5';
+    bar.title = s + '% vốn';
+    wrap.appendChild(bar);
+  });
+}
 
-        // sendAnswerSDP sends an answer SDP if a renegotiation is required
-        async sendAnswerSDP(answer) {
-          const url = `${this.prefixPath}/sessions/${this.sessionId}/renegotiate`;
-          const body = {
-            sessionDescription: {
-              type: 'answer',
-              sdp: answer
-            }
-          };
-          const result = await this.sendRequest(url, body, 'PUT');
-          this.checkErrors(result);
-        }
-      }
+function toggleBias(id) {
+  const el = document.getElementById(id);
+  const ic = document.getElementById(id+'-icon');
+  const open = el.style.display !== 'none' && el.style.display !== '';
+  el.style.display = open ? 'none' : 'block';
+  ic.textContent = open ? '▼ xem ví dụ' : '▲ ẩn';
+}
 
-      // Use Cloudflare's STUN server
-      self.pc = new RTCPeerConnection({
-        iceServers: [
-          {
-            urls: 'stun:stun.cloudflare.com:3478'
-          }
-        ],
-        bundlePolicy: 'max-bundle'
-      });
-
-      // In order to successfully establish a peer connection, we need at least one track to publish.
-      // In this case, we create two: video & audio
-      const localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-
-      // Get the local video element in the HTML and set the source to show local stream
-      const localVideoElement = document.getElementById('local-video');
-      localVideoElement.srcObject = localStream;
-
-      // Add sendonly trancievers to the PeerConnection
-      self.transceivers = localStream.getTracks().map(track =>
-        self.pc.addTransceiver(track, {
-          direction: 'sendonly'
-        })
-      );
-
-      // Create a instance of CallsApp (defined below). Please note that this is not an official SDK but just a demo showing the HTML API.
-      self.app = new CallsApp(appId);
-
-      // Send the first offer and create a session. The returned sessionId is required to retrieve any track published by this peer
-      await self.pc.setLocalDescription(await self.pc.createOffer());
-      const newSessionResult = await self.app.newSession(
-        self.pc.localDescription.sdp
-      );
-      await self.pc.setRemoteDescription(
-        new RTCSessionDescription(newSessionResult.sessionDescription)
-      );
-
-      // Make the peer connection was established
-      await new Promise((resolve, reject) => {
-        self.pc.addEventListener('iceconnectionstatechange', ev => {
-          if (ev.target.iceConnectionState === 'connected') {
-            resolve();
-          }
-          setTimeout(reject, 5000, 'connect timeout');
-        });
-      });
-
-      // We associate a trackName to a transceiver identified by a mid (media ID). This way the track
-      // is remotely reachable by the tuple (sessionId, trackName)
-      let trackObjects = self.transceivers.map(transceiver => {
-        return {
-          location: 'local',
-          mid: transceiver.mid,
-          trackName: transceiver.sender.track.id
-        };
-      });
-
-      // Get local description, create a new track, set remote description with the response
-      await self.pc.setLocalDescription(await self.pc.createOffer());
-      const newLocalTracksResult = await self.app.newTracks(
-        trackObjects,
-        self.pc.localDescription.sdp
-      );
-      await self.pc.setRemoteDescription(
-        new RTCSessionDescription(newLocalTracksResult.sessionDescription)
-      );
-
-      // At this point in code, we are successfully sending local stream to Cloudflare Calls.
-      // Now, we will pull the same stream from Cloudflare Calls.
-
-      // Update trackObjects to reference the tracks as "remote"
-      trackObjects = trackObjects.map(trackObject => {
-        return {
-          location: 'remote',
-          sessionId: self.app.sessionId,
-          trackName: trackObject.trackName
-        };
-      });
-
-      // Prepare to receive the tracks before asking for them
-      const remoteTracksPromise = new Promise(resolve => {
-        let tracks = [];
-        self.pc.ontrack = event => {
-          tracks.push(event.track);
-          console.debug(`Got track mid=${event.track.mid}`);
-          if (tracks.length >= 2) {
-            // remote video & audio are ready
-            resolve(tracks);
-          }
-        };
-      });
-
-      // Calls API request to ask for the tracks
-      const newRemoteTracksResult = await self.app.newTracks(trackObjects);
-      if (newRemoteTracksResult.requiresImmediateRenegotiation) {
-        switch (newRemoteTracksResult.sessionDescription.type) {
-          case 'offer':
-            // We let Cloudflare know we're ready to receive the tracks
-            await self.pc.setRemoteDescription(
-              new RTCSessionDescription(
-                newRemoteTracksResult.sessionDescription
-              )
-            );
-            await self.pc.setLocalDescription(await self.pc.createAnswer());
-            await self.app.sendAnswerSDP(self.pc.localDescription.sdp);
-            break;
-          case 'answer':
-            throw new Error('An offer SDP was expected');
-        }
-      }
-
-      // Once started receiving the tracks (video & audio) send the data to the video tag
-      const remoteTracks = await remoteTracksPromise;
-      const remoteVideoElement = document.getElementById('remote-video');
-      const remoteStream = new MediaStream();
-      remoteStream.addTrack(remoteTracks[0]);
-      remoteStream.addTrack(remoteTracks[1]);
-      remoteVideoElement.srcObject = remoteStream;
-    </script>
-    <style>
-      /* Styles are safe to ignore, just here for demo */
-
-      html {
-        color-scheme: light dark;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          'Segoe UI',
-          Roboto,
-          Oxygen,
-          Ubuntu,
-          Cantarell,
-          'Open Sans',
-          'Helvetica Neue',
-          sans-serif;
-        background: white;
-        color: black;
-      }
-      body,
-      h1,
-      h2 {
-        margin: 0;
-      }
-      h1,
-      h2 {
-        font-weight: 400;
-      }
-      h1 {
-        font-size: 1.5rem;
-        grid-column: 1 / -1;
-      }
-      h2 {
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-      }
-      video {
-        width: 100%;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 1rem;
-      }
-
-      @media (max-width: 500px) {
-        .grid {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
-    </style>
-  </body>
+calcEV(); calcBayes(); calcKelly();
+</script>
+</body>
 </html>
